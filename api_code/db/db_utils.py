@@ -3,6 +3,7 @@
     Description: Database utilities
 '''
 
+import os
 import sqlite3
 from sqlite3 import Error
 
@@ -19,10 +20,15 @@ def dict_factory(cursor, row):
 # Create standard connection method to database
 def create_connection(db_file):
     conn = None
+    # Check working directory and add gfatm_api to path if not present
+    wd = os.getcwd()
+    if 'gfatm_api' not in wd.lower():
+        wd += '/gfatm_api'
+
+    # Try connecting
     try:
-        conn = sqlite3.connect('./gfatm_api/db_data/{}.db'.format(str(db_file)))
+        conn = sqlite3.connect('{}/db_data/{}.db'.format(wd, str(db_file)))
         conn.row_factory = dict_factory
-        print('  Database found at ./gfatm_api/db_data/{}.db'.format(str(db_file)))
         return conn
     except Error as e:
         print(e)
@@ -35,7 +41,6 @@ def create_table(conn, create_table_sql):
     try:
         c = conn.cursor()
         c.execute(create_table_sql)
-        print('  Table created successfully')
     except Error as e:
         print(e)
 

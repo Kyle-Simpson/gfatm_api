@@ -6,11 +6,16 @@
 
 import json
 import sys
+import os
 import pandas as pd
+from sty import fg
 from db_utils import create_connection, create_table, insert_into_table
 
-prog_docs_location = r"C:\Users\Kyle\Desktop\api\gfatm_api\db_data\raw_program_docs.json"
 
+wd = os.getcwd()
+if 'gfatm_api' not in wd.lower():
+    wd += '/gfatm_api'
+prog_docs_location = '{}/db_data/raw_program_docs.json'.format(wd)
 
 
 def load_prog_docs():
@@ -69,7 +74,7 @@ def insert_all(conn, prog_docs):
         Description: Loop through prog_docs and call the insert_into_table function
     '''
 
-    print('  Filling the program_documents table. Thank you for your patience')
+    print('  Filling the program_documents table - thank you for your patience')
 
     # Loop through each row of prog_docs
     for index, doc in prog_docs.iterrows():
@@ -113,7 +118,7 @@ def insert_all(conn, prog_docs):
         if conn is not None:
             insert_into_table(conn, ''.join(insert_sql))
         
-    print('  program_documents table created successfully')
+    print('  Table created successfully')
 
 
 
@@ -122,6 +127,7 @@ if __name__ == "__main__":
     print(' ')
 
     # Connect to the provided database
+    print('  Connecting to db')
     db_name = str(sys.argv[1])
     conn = create_connection(db_name)
 
@@ -129,10 +135,12 @@ if __name__ == "__main__":
     prog_docs = load_prog_docs()
 
     # Create base table
+    print('  Creating program_documents table')
     create_base_table(conn)
     
     # Insert all the observations into the db
     insert_all(conn, prog_docs)
 
+    print(fg.green + '  Database is ready for use' + fg.rs)
     print(' ')
     print(' ')
