@@ -7,7 +7,7 @@
 import flask
 from flask import request, jsonify
 import sqlite3
-from db.db_utils import create_connection
+from db.db_utils import create_connection, insert_into_table
 
 
 # Initialize application
@@ -47,6 +47,11 @@ def api_all():
 @app.errorhandler(404)
 def page_not_found(e):
     return "<h1>404</h1><p>The resource could not be found</p>", 404
+
+
+@app.errorhandler(403)
+def update_failed(e):
+    return "<h1>403</h1><p>The resource could not be updated</p>", 403
 
 
 # Setup queries for api requests
@@ -104,6 +109,95 @@ def api_filter():
 
     return jsonify(results)
 
+
+@app.route('/api/v1/resources/program_docs/update', methods=['GET', 'POST'])
+def update_form():
+    if request.method== 'POST':
+        prog_docs_insert(request.form)
+        return '<h1>New Document Added</h1>'
+
+    form = '<form method="POST">'
+    inputs = [['Program Document ID', 'programDocumentId'], ['Document Type ID', 'documentTypeId'],
+                ['Document Type Description', 'documentTypeDescription'], ['Document Type Code', 'documentTypeCode'],
+                ['Document Type Sort Order', 'documentTypeSortOrder'], ['Geographic Area ID', 'geographicAreaId'],
+                ['Geographic Area Code - ISO3', 'geographicAreaCode_ISO3'], ['Geographic Area Name', 'geographicAreaName'],
+                ['Organization ID', 'organizationId'], ['Organization Name', 'organizationName'],
+                ['Component ID', 'componentId'], ['Component Name', 'componentName'], ['Grant Agreement Id', 'grantAgreementId'],
+                ['Grant Agreement Number', 'grantAgreementNumber'], ['Implementation Period ID', 'implementationPeriodId'],
+                ['Implementation Period Name', 'implementationPeriodName'], ['Process Name', 'processName'],
+                ['Process Year', 'processYear'], ['Process Window', 'processWindow'], ['File Name', 'fileName'],
+                ['File Index', 'fileIndex'], ['File Extension', 'fileExtension'], ['File Size', 'fileSize'],
+                ['File Language', 'fileLanguage'], ['File Modified Date Time', 'fileModifiedDateTime'],
+                ['File Created Date Time', 'fileCreatedDateTime'], ['File URL', 'fileURL']]
+
+    for input in inputs:
+        form += '{}: <input type="text" name="{}"><br>'.format(input[0], input[1])
+
+    form += '<input type="submit" value="submit"></form>'
+
+    return form
+
+
+# Define method to create new data
+@app.route('/api/v1/resources/program_docs/update', methods=['POST'])
+def prog_docs_insert(request):
+    # Hold onto the request arguments
+    query_params = request
+
+    # Define all possible filters
+    filters = {
+        'programDocumentId' : None, 'documentTypeId' : None,
+        'documentTypeDescription' : None, 'documentTypeCode' : None,
+        'documentTypeSortOrder' : None, 'geographicAreaId' : None,
+        'geographicAreaCode_ISO3' : None, 'geographicAreaName' : None,
+        'organizationId' : None, 'organizationName' : None, 'componentId' : None,
+        'componentName' : None, 'grantAgreementId' : None, 'grantAgreementNumber' : None,
+        'implementationPeriodId' : None, 'implementationPeriodName' : None,
+        'processName' : None, 'processYear' : None, 'processWindow' : None,
+        'fileName' : None, 'fileIndex' : None, 'fileExtension' : None, 'fileSize' : None,
+        'fileLanguage' : None, 'fileModifiedDateTime' : None, 'fileCreatedDateTime' : None,
+        'fileURL' : None
+    }
+
+    # Init base query ther we'll format with further args
+    query = ("INSERT INTO program_documents (programDocumentId, documentTypeId, documentTypeDescription, documentTypeCode, ",
+                "documentTypeSortOrder, geographicAreaId, geographicAreaCode_ISO3, geographicAreaName, organizationId, organizationName, ",
+                "componentId, componentName, grantAgreementId, grantAgreementNumber, implementationPeriodId, implementationPeriodName, ",
+                "processName, processYear, processWindow, fileName, fileIndex, fileExtension, fileSize, fileLanguage, fileModifiedDateTime, ",
+                "fileCreatedDateTime, fileURL) VALUES (")
+    query = ''.join(query)
+
+    # Parse the parameters
+    for filter in filters.keys():
+        filters[filter] = query_params.get(filter)
+    to_filter = []
+
+    # Add to the query and to_filter if any variables exist
+    for filter in filters.keys():
+        if filters[filter]:
+            query += '?, '
+            to_filter.append('{}'.format(filters[filter]))
+        else:
+            query += '"NULL", '
+
+    # If no filters supplied, throw error
+    if all(filter is None for filter in filters.values()):
+        return update_failed(403)
+
+    # Remove any trailing `AND` and add a semicolon
+    query = query[:-2] + ');'
+
+    # Initialize the db connection
+    conn = create_connection(db)
+    c = conn.cursor()
+
+    # Execute the query and add the filters
+    c.execute(query, to_filter)
+    conn.commit()
+
+    # Close the connection
+    c.close()
+    conn.close()
 
 
 # Run the application

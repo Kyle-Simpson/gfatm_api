@@ -8,7 +8,6 @@ import json
 import sys
 import os
 import pandas as pd
-from sty import fg
 from db_utils import create_connection, create_table, insert_into_table
 
 
@@ -141,6 +140,6 @@ if __name__ == "__main__":
     # Insert all the observations into the db
     insert_all(conn, prog_docs)
 
-    print(fg.green + '  Database is ready for use' + fg.rs)
+    print('  Database is ready for use')
     print(' ')
     print(' ')
