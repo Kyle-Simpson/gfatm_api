@@ -139,7 +139,6 @@ def update_form():
 
 
 # Define method to create new data
-@app.route('/api/v1/resources/program_docs/update', methods=['POST'])
 def prog_docs_insert(request):
     # Hold onto the request arguments
     query_params = request
@@ -184,7 +183,7 @@ def prog_docs_insert(request):
     if all(filter is None for filter in filters.values()):
         return update_failed(403)
 
-    # Remove any trailing `AND` and add a semicolon
+    # Remove any trailing space and add a semicolon
     query = query[:-2] + ');'
 
     # Initialize the db connection
